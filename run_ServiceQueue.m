@@ -4,7 +4,7 @@
 %% Set up
 
 % Set up to run 100 samples of the queue.
-n_samples = 400;
+n_samples = 100;
 
 % Each sample is run up to a maximum time of 1000.
 max_time = 1000;
