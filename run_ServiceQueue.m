@@ -4,7 +4,7 @@
 %% Set up
 
 % Set up to run 100 samples of the queue.
-n_samples = 100;
+n_samples = 400;
 
 % Each sample is run up to a maximum time of 1000.
 max_time = 1000;
@@ -19,7 +19,7 @@ NInSystemSamples = cell([1, n_samples]);
 % the log interval should be long enough for several arrival and departure
 % events happen.
 for sample_num = 1:n_samples
-    q = ServiceQueue(LogInterval=10);
+    q = ServiceQueue(LogInterval=10);%,NumServers = 1 );
     q.schedule_event(Arrival(1, Customer(1)));
     run_until(q, max_time);
     % Pull out samples of the number of customers in the queue system. Each
@@ -46,6 +46,7 @@ NInSystem = vertcat(NInSystemSamples{:});
 % This is roughly equivalent to "splatting" in Python, which looks like
 % f(*args).
 
+
 %% Make a picture
 
 % Start with a histogram.  The result is an empirical PDF, that is, the
@@ -61,14 +62,14 @@ hold on;
 % For comparison, plot the theoretical results for a M/M/1 queue.
 % The agreement isn't all that good unless you run for a long time, say
 % max_time = 10,000 units, and LogInterval is large, say 10.
-rho = q.ArrivalRate / q.DepartureRate;
-P0 = 1 - rho;
+rho = 1/2;
+P0 = 2/5;
 nMax = 10;
 ns = 0:nMax;
 P = zeros([1, nMax+1]);
 P(1) = P0;
-for n = 1:nMax
-    P(1+n) = P0 * rho^n;
+for n = 2:nMax
+    P(n) = (3/5)* rho^(n-1);
 end
 plot(ns, P, 'o', MarkerEdgeColor='k', MarkerFaceColor='r');
 
@@ -81,3 +82,5 @@ fig.Units = 'inches';
 screenposition = fig.Position;
 fig.PaperPosition = [0 0 screenposition(3:4)];
 fig.PaperSize = [screenposition(3:4)];
+
+
