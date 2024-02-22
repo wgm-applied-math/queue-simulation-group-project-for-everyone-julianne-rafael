@@ -12,4 +12,15 @@ function q = test_ServiceQueue(max_time)
     while q.Time < max_time
         handle_next_event(q);
     end
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    % Times customers spent waiting
+    %DepartureTime-ArrivalTime = time spent waiting?!?!?!?!
+    waiting_times = served_customer_times(q);
+    %Histogram
+    figure;
+    histogram(waiting_times, 'BinWidth', 1);
+    title('Waiting Times');
+    xlabel('Time Spent Waiting');
+    ylabel('Frequency');
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  
 end
