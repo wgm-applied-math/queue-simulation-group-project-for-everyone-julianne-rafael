@@ -25,7 +25,8 @@ function q = test_ServiceQueue(max_time)
     % Corrected code
     waiting_in_queue = cellfun(@(customer) customer.BeginServiceTime - customer.ArrivalTime, q.Served);
     figure;
-    histogram(waiting_in_queue, 'BinWidth', .25);
+    edges = 0:.02:.5;  
+    histogram(waiting_in_queue, 'BinEdges', edges);
     title('Time Spent in Queue');
     xlabel('Time');
     ylabel('Frequency');
@@ -33,7 +34,8 @@ function q = test_ServiceQueue(max_time)
     % Histogram 3: Time Served
     time_served = cellfun(@(customer) customer.DepartureTime - customer.BeginServiceTime, q.Served);
     figure;
-    histogram(time_served, 'BinWidth', .5);
+    edges = 0:.5:7;  
+    histogram(time_served, 'BinEdges', edges);
     title('Time Served');
     xlabel('Time');
     ylabel('Frequency');
