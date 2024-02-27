@@ -13,14 +13,29 @@ function q = test_ServiceQueue(max_time)
         handle_next_event(q);
     end
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % Times customers spent waiting
-    %DepartureTime-ArrivalTime = time spent waiting?!?!?!?!
+    % Histogram 1: Waiting Times
     waiting_times = served_customer_times(q);
-    %Histogram
     figure;
     histogram(waiting_times, 'BinWidth', 1);
     title('Waiting Times');
     xlabel('Time Spent Waiting');
     ylabel('Frequency');
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  
+    % Histogram 2: Time Spent in Queue
+    % Corrected code
+    waiting_in_queue = cellfun(@(customer) customer.BeginServiceTime - customer.ArrivalTime, q.Served);
+    figure;
+    histogram(waiting_in_queue, 'BinWidth', .25);
+    title('Time Spent in Queue');
+    xlabel('Time');
+    ylabel('Frequency');
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%  
+    % Histogram 3: Time Served
+    time_served = cellfun(@(customer) customer.DepartureTime - customer.BeginServiceTime, q.Served);
+    figure;
+    histogram(time_served, 'BinWidth', .5);
+    title('Time Served');
+    xlabel('Time');
+    ylabel('Frequency');
+
 end
