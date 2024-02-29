@@ -17,6 +17,8 @@ classdef ServiceQueue < handle
         % NumServers - How many identical serving stations are available.
         NumServers = 1;
 
+        %
+
         % LogInterval - Approximately how many time units between log
         % entries.  Log events are scheduled so that when one log entry is
         % recorded, the next is scheduled for the curren time plus this
@@ -121,7 +123,7 @@ classdef ServiceQueue < handle
                     {'double', 'int64', 'int64', 'int64'});
 
             % The first event is to record the state at time 0 to the log.
-            schedule_event(obj, RecordToLog(0));
+            schedule_event(obj, RecordToLog(obj.LogInterval)); %%%change from 0 to obj.logInterval 
         end
 
         function obj = run_until(obj, MaxTime)
