@@ -23,7 +23,7 @@ classdef ServiceQueue < handle
         % entries.  Log events are scheduled so that when one log entry is
         % recorded, the next is scheduled for the curren time plus this
         % interval.
-        LogInterval = 1;
+        LogInterval = 10;
     
     end
 
@@ -71,10 +71,14 @@ classdef ServiceQueue < handle
         Served;
 
         % Log - Table of log entries. Its columns are 'Time', 'NWaiting',
-        % 'NInService', 'NServed', meaning: time, how many customers are
+        % 'NInService', 'NumServed', meaning: time, how many customers are
         % currently waiting, how many are currently being served, and how
         % many have been served.
-        Log;
+        Log = table(Size=[0, 4], ...
+            VariableNames=...
+            {'Time', 'NWaiting', 'NNInService', 'NumServed'}, ...
+            VariableTypes=...
+            {'double', 'int64', 'int64', 'int64'});
     
     end
 
@@ -118,7 +122,7 @@ classdef ServiceQueue < handle
             obj.Log = table( ...
                 Size=[0, 4], ...
                 VariableNames=...
-                    {'Time', 'NWaiting', 'NInService', 'NServed'}, ...
+                    {'Time', 'NWaiting', 'NInService', 'NumServed'}, ...
                 VariableTypes=...
                     {'double', 'int64', 'int64', 'int64'});
 
@@ -300,10 +304,10 @@ classdef ServiceQueue < handle
 
             NWaiting = length(obj.Waiting);
             NInService = obj.NumServers - sum(obj.ServerAvailable);
-            NServed = length(obj.Served);
+            NumServed = length(obj.Served);
 
             % MATLAB-ism: This is how to add a row to the end of a table.
-            obj.Log(end+1, :) = {obj.Time, NWaiting, NInService, NServed};
+            obj.Log(end+1, :) = {obj.Time, NWaiting, NInService, NumServed};
         end
     end
 end
