@@ -17,13 +17,13 @@ classdef ServiceQueue < handle
         %AnotherDepartureRate = 1; 
 
         % NumServers - How many identical serving stations are available.
-        NumServers = 1;
+        NumServers = 2;
 
         % LogInterval - Approximately how many time units between log
         % entries.  Log events are scheduled so that when one log entry is
         % recorded, the next is scheduled for the curren time plus this
         % interval.
-        LogInterval = 1;
+        LogInterval = 10;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         InService = {};
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%    
@@ -44,7 +44,7 @@ classdef ServiceQueue < handle
         ServiceDist;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         AnotherServiceDist;
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         % ServerAvailable - Row vector of boolean values, initial all true.
         % ServerAvailable(j) is set to false when serving station j begins
         % serving a customer, and is set to true when that service is
@@ -75,10 +75,14 @@ classdef ServiceQueue < handle
         Served;
 
         % Log - Table of log entries. Its columns are 'Time', 'NWaiting',
-        % 'NInService', 'NServed', meaning: time, how many customers are
+        % 'NumInService', 'NServed', meaning: time, how many customers are
         % currently waiting, how many are currently being served, and how
         % many have been served.
-        Log;
+        Log = table(Size=[0, 4], ...
+            VariableNames=...
+            {'Time', 'NWaiting', 'NNInService', 'NumServed'}, ...
+            VariableTypes=...
+            {'double', 'int64', 'int64', 'int64'});
     
     end
 
@@ -116,9 +120,9 @@ classdef ServiceQueue < handle
             obj.ServiceDist = ...
                 makedist("Exponential", mu=1/obj.DepartureRate);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    
-            obj.AnotherServiceDist = makedist("Exponential", 'mu', 1/1);
-
+            %obj.SecondServerActive = false;
+            %AnotherServiceDist
+            obj.AnotherServiceDist = makedist("Exponential", mu = 1);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
             obj.ServerAvailable = repelem(true, obj.NumServers);
@@ -145,7 +149,7 @@ classdef ServiceQueue < handle
             % obj = run_until(obj, MaxTime) Repeatedly handle the next
             % event until the current time is at least MaxTime.
 
-            while obj.Time < MaxTime
+            while obj.Time <= MaxTime
                 handle_next_event(obj)
             end
         end
@@ -153,9 +157,8 @@ classdef ServiceQueue < handle
         function schedule_event(obj, event)
             % schedule_event Add an object to the event queue.
 
-            if event.Time < obj.Time
-                error('event happens in the past');
-            end
+            assert(event.Time >= obj.Time, ...
+                "Event happens in the past");
             push(obj.Events, event);
         end
 
@@ -163,13 +166,11 @@ classdef ServiceQueue < handle
             % handle_next_event Pop the next event and use the visitor
             % mechanism on it to do something interesting.
 
-            if is_empty(obj.Events)
-                error('no unhandled events');
-            end
+            assert(~is_empty(obj.Events), ...
+                "No unhandled events");
             event = pop_first(obj.Events);
-            if obj.Time > event.Time
-                error('event happened in the past');
-            end
+            assert(event.Time >= obj.Time, ...
+                "Event happens in the past");
 
             % Update the current time to match the event that just
             % happened.
@@ -222,6 +223,10 @@ classdef ServiceQueue < handle
             % handle_departure Handle a departure event.
             % This is which service station experiences the departure.
             j = departure.ServerIndex;
+            assert(~obj.ServerAvailable(j), ...
+                "Service station j must be occupied");
+            assert(obj.Servers{j} ~= false, ...
+                "There must be a customer in service station j");
             customer = obj.Servers{j};
             % Record the event time as the departure time for this
             % customer.
@@ -259,7 +264,7 @@ classdef ServiceQueue < handle
     num_waiting = length(obj.Waiting) + length(obj.InService);
 
         % Choose the appropriate service time distribution
-        if num_waiting > 1 
+        if num_waiting > 1 %|| obj.SecondServerActive
             % Use the second server
             service_time = random(obj.AnotherServiceDist);
         else
@@ -272,6 +277,7 @@ classdef ServiceQueue < handle
     % the customer at station j departs.
     obj.schedule_event(Departure(obj.Time + service_time, j));
 end
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         function advance(obj)
             % advance, Check to see if a waiting customer can advance.
@@ -291,6 +297,7 @@ end
                     % Move the customer from Waiting list
                     customer = obj.Waiting{1};
                     obj.Waiting(1) = [];
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                     % and begin serving them at station j.
                     begin_serving(obj, j, customer);
                 else
@@ -317,7 +324,15 @@ end
             % LogInterval time.
             schedule_event(obj, RecordToLog(obj.Time + obj.LogInterval));
         end
+        function n = count_customers_in_system(obj)
+            % count_customers_in_system Return how many customers are
+            % currently in the system, including those waiting and those
+            % being served.
 
+            NWaiting = length(obj.Waiting);
+            NInService = obj.NumServers - sum(obj.ServerAvailable);
+            n = NWaiting + NInService;
+        end
         function record_log(obj)
             % record_log Record a summary of the service queue state.
 
@@ -325,21 +340,8 @@ end
             NInService = obj.NumServers - sum(obj.ServerAvailable);
             %NInSystem = NWaiting + NInService $the total amount of people
             %in the system 
-            NServed = length(obj.Served);
-
-
-
-            %%%%%could also use this NInSystem to calculate the if and else
-            %%%%% statement of it. 
-
-
-
-
-
-            %% Nwaiting - Nserved is this example, obj.Waiting 
-
-            % MATLAB-ism: This is how to add a row to the end of a table.
-            obj.Log(end+1, :) = {obj.Time, NWaiting, NInService, NServed};
+            NumServed = length(obj.Served);
+            obj.Log(end+1, :) = {obj.Time, NWaiting, NInService, NumServed};
         end
     end
 end
